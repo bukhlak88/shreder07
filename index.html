@@ -577,59 +577,6 @@ playGameOver();
   var msg='\uD83E\uDD85 I scored '+score+' points in Hawk Jumper, created special for @RAFA_AI! Can you beat me? Thanks for @bukhlak88.';
   document.getElementById('twa').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(msg);
   show('s-go');
-// Встав свої коди сюди
-const PRIVATE_KEY = "cgpr101Ep0yMn0IZPhMAqwVghoK20BG06c_rPh-i1Npg";
-const PUBLIC_KEY = "5fa8af5feb371a09c4c51d17";
-
-async function endGame(score) {
-    if (bgMusic) bgMusic.pause();
-    
-    // Отримуємо нікнейм з інпуту
-    const nickname = document.getElementById('ni').value || 'Pilot';
-    
-    // 1. Відправляємо рекорд на сервер dreamlo
-    const saveUrl = `https://www.dreamlo.com/lb/${PRIVATE_KEY}/add/${encodeURIComponent(nickname)}/${score}`;
-    
-    try {
-        await fetch(saveUrl); // Чекаємо поки збережеться
-        await updateGlobalLeaderboard(); // Оновлюємо список на екрані
-    } catch (err) {
-        console.error("Помилка зв'язку з лідербордом", err);
-    }
-
-    // Показуємо екран Game Over
-    showScreen('s-go');
-    document.getElementById('go-s').innerText = score;
-}
-
-// Функція для отримання та малювання списку рекордів
-async function updateGlobalLeaderboard() {
-    const list = document.getElementById('lb-list');
-    const emptyMsg = document.getElementById('lb-empty');
-    const loadUrl = `https://www.dreamlo.com/lb/${PUBLIC_KEY}/json`;
-
-    try {
-        const response = await fetch(loadUrl);
-        const data = await response.json();
-        
-        if (data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
-            let entries = data.dreamlo.leaderboard.entry;
-            // Якщо запис лише один, dreamlo повертає об'єкт, а не масив. Робимо масив:
-            if (!Array.isArray(entries)) entries = [entries];
-
-            emptyMsg.style.display = 'none';
-            list.innerHTML = entries.map((entry, index) => `
-                <div class="lbr ${index === 0 ? 'gd' : ''}">
-                    <span>#${index + 1}</span>
-                    <strong style="flex:1; margin-left:10px">${entry.name}</strong>
-                    <span>${entry.score} pts</span>
-                </div>
-            `).join('');
-        }
-    } catch (err) {
-        console.log("Лідерборд поки порожній");
-    }
-}
 }
 </script>
 </body>
