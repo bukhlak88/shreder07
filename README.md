@@ -1,2 +1,1 @@
-# My first commit!
-Need more money
+Special game for RAFA AI
