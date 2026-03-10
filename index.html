@@ -82,7 +82,7 @@ input:focus{border-color:#4fffaa;box-shadow:0 0 16px rgba(63,255,170,.25)}
 <div id="app">
   <div class="screen" id="s-login">
     <div class="sbg"></div>
-    <div style="font-size:68px;margin-bottom:8px;filter:drop-shadow(0 0 18px #2ecc71)">&#129413;</div>
+    <img id="hero-img" style="width:120px;height:120px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 18px #2ecc71)">
     <h1 class="logo">HAWK<span> JUMPER</span></h1>
     <p class="tag">Jump &bull; Collect &bull; Survive</p>
     <input id="ni" placeholder="Enter your nickname..." maxlength="20" autocomplete="off"/>
@@ -259,7 +259,9 @@ function loadAssets(cb){
   var ci=new Image(); ci.onload=function(){COIN=stripBlack(ci);done();}; ci.onerror=done;
   ci.src="data:image/png;base64,"+COIN_B64;
 }
-loadAssets();
+loadAssets(function(){
+  document.getElementById('hero-img').src = HAWK.toDataURL();
+});
 
 // ─── AUDIO ───────────────────────────────────────
 var audioCtx = new (window.AudioContext||window.webkitAudioContext)();
