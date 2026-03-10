@@ -46,6 +46,69 @@ input:focus{border-color:#4fffaa;box-shadow:0 0 16px rgba(63,255,170,.25)}
 .screen>*:not(.sbg){position:relative;z-index:1}
 .nb{color:#ffd700;font-size:12px;letter-spacing:2px;margin-top:-12px;margin-bottom:12px}
 @keyframes tw{from{opacity:.15}to{opacity:1}}
+/* === GAME OVER — МАКСИМАЛЬНО КОМПАКТНА ВЕРСІЯ + ЦЕНТРУВАННЯ === */
+#s-go {
+    padding: 15px 10px 20px;           /* зменшили padding зверху/знизу */
+    text-align: center;
+}
+
+#s-go h2 {
+    margin-bottom: 12px;               /* менше простору під заголовком */
+}
+
+#s-go .sbox {
+    padding: 10px 24px;                /* компактніше */
+    margin-bottom: 12px;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#s-go .sn {
+    font-size: 38px;                   /* ще менший шрифт для висоти */
+}
+
+#s-go .btn {
+    width: 100%;
+    max-width: 260px !important;       /* головне — зменшили максимальну ширину */
+    padding: 10px 20px;
+    font-size: 12.5px;
+    margin-bottom: 6px;                /* зменшили відступ між кнопками */
+    min-height: 44px;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+/* Додатково для дуже низьких екранів (висота < 680px) */
+@media (max-height: 680px) {
+    #s-go {
+        padding: 10px 8px 15px;
+    }
+    #s-go .btn {
+        max-width: 240px !important;
+        padding: 9px 18px;
+        font-size: 12px;
+        margin-bottom: 5px;
+        min-height: 40px;
+    }
+    #s-go .sn {
+        font-size: 32px;
+    }
+    #s-go .sbox {
+        padding: 8px 20px;
+        margin-bottom: 10px;
+    }
+    #s-go .nb {
+        margin: 6px 0;
+        font-size: 11px;
+    }
+}
+
+/* Центрування всього контенту в #s-go */
+#s-go > *:not(.sbg) {
+    margin-left: auto;
+    margin-right: auto;
+}
 </style>
 </head>
 <body>
@@ -111,7 +174,7 @@ function stripBlack(img) {
 // Overlap of 15% means body and wings always share pixels — no gap possible.
 
 var HAWK=null, COIN=null, HAWK_BODY=null, HAWK_WINGS=null, READY=false;
-
+var bgMusic = null;
 function bakeHawkParts() {
   if (!HAWK || HAWK.width===0) return;
   var W=HAWK.width, H=HAWK.height;
@@ -137,6 +200,10 @@ function loadAssets(cb) {
   hi.src="data:image/png;base64,"+HAWK_B64;
   var ci=new Image(); ci.onload=function(){ COIN=stripBlack(ci); done(); }; ci.onerror=done;
   ci.src="data:image/png;base64,"+COIN_B64;
+    // Фонова музика
+    bgMusic = new Audio('https://soundimage.org/wp-content/uploads/2020/04/Pixel-Runner.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.22;
 }
 loadAssets();
 
@@ -259,6 +326,98 @@ function burst(gs,x,y,col){
 }
 
 var raf=null, gs=null;
+// ====================== ЗВУКИ ======================
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// Фонова музика (loop)
+var bgMusic = new Audio('https://soundimage.org/wp-content/uploads/2020/04/Pixel-Runner.mp3');
+bgMusic.loop = true;          // зациклюємо
+bgMusic.volume = 0.25;        // не надто гучно (можна 0.15–0.35)
+function playJump() {
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.22);
+    gain.gain.value = 0.35;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playCoin() {
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(1760, audioCtx.currentTime + 0.12);
+    gain.gain.value = 0.4;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+}
+// ====================== ЗВУК GAME OVER ======================
+function playGameOver() {
+    const now = audioCtx.currentTime;
+
+    // 1. Потужний низький "бум"
+    const boom = audioCtx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.value = 65;
+    const gainBoom = audioCtx.createGain();
+    gainBoom.gain.value = 0.65;
+    gainBoom.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+    // 2. Низхідна мелодія (ретро-стиль "ти програв")
+    const melody = audioCtx.createOscillator();
+    melody.type = 'sawtooth';
+    melody.frequency.setValueAtTime(420, now);
+    melody.frequency.exponentialRampToValueAtTime(80, now + 1.4);
+
+    const gainMelody = audioCtx.createGain();
+    gainMelody.gain.value = 0.25;
+    gainMelody.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+
+    // 3. Легкий шум наприкінці (для драматичності)
+    const noise = audioCtx.createBufferSource();
+    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.6, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0.12;
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.9);
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+
+    // Підключення
+    boom.connect(gainBoom);
+    melody.connect(gainMelody);
+    noise.connect(noiseGain);
+    noiseGain.connect(filter);
+    filter.connect(audioCtx.destination);
+
+    gainBoom.connect(audioCtx.destination);
+    gainMelody.connect(audioCtx.destination);
+
+    // Запуск
+    boom.start(now);
+    melody.start(now);
+    noise.start(now + 1.1);
+
+    boom.stop(now + 2);
+    melody.stop(now + 1.7);
+    noise.stop(now + 2);
+}
+// ========================================================
+// =================================================
 function startGame(){
   if(raf){cancelAnimationFrame(raf);raf=null;}
   if(HAWK&&!HAWK_BODY) bakeHawkParts();
@@ -279,7 +438,12 @@ function startGame(){
   };
 
   function jump(){
+playJump();
     if(!gs||gs.p.dead)return;
+    // Запуск музики при першому стрибку
+    if (bgMusic && bgMusic.paused) {
+        bgMusic.play().catch(() => {});
+    }
     if(gs.p.jumps>0){
       gs.p.vy=JF; gs.p.jumps--;
       // FLAP: snap wings UP immediately, then let them spring back
@@ -341,6 +505,7 @@ function tick(){
     if(!c.done&&p.x+PW-8>c.x&&p.x+8<c.x+32&&p.y+PH-4>c.y&&p.y+4<c.y+32){
       c.done=true; var pts=Math.round(100*(gs.speed/BASE_SPD)); gs.score+=pts;
       burst(gs,c.x+16,c.y+16,'#ffe566');
+playCoin();
       gs.pts.push({x:c.x+16,y:c.y-4,vx:0,vy:-2.5,life:1.8,r:0,col:'#ffe566',text:'+'+pts});
     }
   }
@@ -400,6 +565,11 @@ function draw(ctx){
 }
 
 function endGame(score){
+if (bgMusic) {
+        bgMusic.pause();
+        bgMusic.currentTime = 0;
+    }
+playGameOver();
   var isBest=addScore(username,score);
   document.getElementById('go-n').textContent=username;
   document.getElementById('go-s').textContent=score;
